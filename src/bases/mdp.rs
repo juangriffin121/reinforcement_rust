@@ -18,7 +18,7 @@ where
     S: State,
     A: Action,
 {
-    fn dynamics<'a>(&self, state: &S, action: &A) -> HashMap<(S, f32), f32>;
+    fn dynamics(&self, state: &S, action: &A) -> HashMap<(S, f32), f32>;
     fn posible_actions(&self, state: &S) -> Vec<A>;
     fn get_states(&self) -> Vec<S>;
 }
