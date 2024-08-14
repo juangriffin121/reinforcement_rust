@@ -26,7 +26,7 @@ where
                     let probs = enviorment.dynamics(state, &action);
                     let mut sum = 0.0;
                     for ((next_state, reward), prob) in probs.iter() {
-                        sum += prob * (reward + gamma * values[next_state])
+                        sum += prob * (*reward as f32 + gamma * values[next_state])
                     }
                     sum
                 }
@@ -37,7 +37,7 @@ where
                         let acton_prob = action_dist[&action];
                         let probs = enviorment.dynamics(state, &action);
                         for ((next_state, reward), prob) in probs.iter() {
-                            sum += acton_prob * prob * (reward + gamma * values[next_state])
+                            sum += acton_prob * prob * (*reward as f32 + gamma * values[next_state])
                         }
                     }
                     sum
@@ -79,7 +79,7 @@ where
                     let probs = enviorment.dynamics(&state, &action);
                     let mut sum = 0.0;
                     for ((next_state, reward), prob) in probs.iter() {
-                        sum += prob * (reward + gamma * values[next_state])
+                        sum += prob * (*reward as f32 + gamma * values[next_state])
                     }
                     if max_action_value < sum {
                         max_action = action;
@@ -119,7 +119,11 @@ where
     let mut values: HashMap<S, f32> = HashMap::new();
     let states = enviorment.get_states();
     for state in &states {
-        values.insert(state.clone(), rng.gen());
+        if state.is_terminal() {
+            values.insert(state.clone(), 1.0);
+        } else {
+            values.insert(state.clone(), rng.gen());
+        }
     }
     values = policy_evaluation(agent, &enviorment, &states, values, gamma, tolerance);
     return policy_improvement(agent, enviorment, &states, gamma, tolerance, values);
@@ -137,10 +141,9 @@ where
     S: mdp::State,
     E: mdp::Enviorment<S, A>,
 {
-    let mut delta: f32 = 0.0;
-
     loop {
-        for state in states {
+        let mut delta: f32 = 0.0;
+        for (i, state) in states.iter().enumerate() {
             let v = values[state];
             let actions = enviorment.posible_actions(&state);
             let mut max_action = &actions[0];
@@ -150,7 +153,7 @@ where
                 let probs = enviorment.dynamics(&state, &action);
                 let mut sum = 0.0;
                 for ((next_state, reward), prob) in probs.iter() {
-                    sum += prob * (reward + gamma * values[next_state])
+                    sum += prob * (*reward as f32 + gamma * values[next_state])
                 }
                 if max_action_value < sum {
                     max_action = action;
@@ -161,12 +164,16 @@ where
             let probs = enviorment.dynamics(&state, &action);
             let mut sum = 0.0;
             for ((next_state, reward), prob) in probs.iter() {
-                sum += prob * (reward + gamma * values[next_state])
+                sum += prob * (*reward as f32 + gamma * values[next_state])
             }
             let value = sum;
             delta = delta.max((v - value).abs());
             let val = values.get_mut(state).unwrap();
             *val = value;
+            println!("{i:?}");
+            println!("{delta:?}");
+
+            //println!("{values:?}")
         }
         if delta < tolerance {
             break;

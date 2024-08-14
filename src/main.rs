@@ -1,5 +1,8 @@
+use exercises::ex4_3::solution;
+
 mod bases;
 mod exercises;
 fn main() {
-    println!("Hello, world!");
+    let values = solution();
+    println!("{values:?}")
 }
