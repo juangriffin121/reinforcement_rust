@@ -13,7 +13,7 @@ pub fn policy_evaluation<E, S, A>(
 where
     A: mdp::Action,
     S: mdp::State,
-    E: mdp::Enviorment<S, A>,
+    E: mdp::EnviormentModel<S, A>,
 {
     loop {
         let mut delta: f32 = 0.0;
@@ -30,7 +30,7 @@ where
                     sum
                 }
                 mdp::Policy::Stochastic(policy) => {
-                    let action_dist = policy(state);
+                    let action_dist = &policy[state];
                     let mut sum = 0.0;
                     for action in enviorment.posible_actions(state) {
                         let acton_prob = action_dist[&action];
@@ -67,7 +67,7 @@ pub fn policy_improvement<E, S, A>(
 where
     A: mdp::Action,
     S: mdp::State,
-    E: mdp::Enviorment<S, A>,
+    E: mdp::EnviormentModel<S, A>,
 {
     let mut policy_stable = true;
     for (i, state) in states.iter().enumerate() {
@@ -117,14 +117,14 @@ pub fn policy_iteration<E, S, A>(
 where
     A: mdp::Action,
     S: mdp::State,
-    E: mdp::Enviorment<S, A>,
+    E: mdp::EnviormentModel<S, A>,
 {
     let mut values = values.unwrap_or({
         let mut rng = thread_rng();
         let mut values: HashMap<S, f32> = HashMap::new();
         let states = enviorment.get_states();
         for state in &states {
-            if state.is_terminal() {
+            if enviorment.is_terminal(state) {
                 values.insert(state.clone(), 1.0);
             } else {
                 values.insert(state.clone(), rng.gen());
@@ -147,14 +147,14 @@ pub fn value_iteration<E, S, A>(
 where
     A: mdp::Action,
     S: mdp::State,
-    E: mdp::Enviorment<S, A>,
+    E: mdp::EnviormentModel<S, A>,
 {
     let mut values = values.unwrap_or({
         let mut rng = thread_rng();
         let mut values: HashMap<S, f32> = HashMap::new();
         let states = enviorment.get_states();
         for state in &states {
-            if state.is_terminal() {
+            if enviorment.is_terminal(state) {
                 values.insert(state.clone(), 0.0);
             } else {
                 values.insert(state.clone(), rng.gen());
@@ -212,7 +212,7 @@ pub fn greedy_policy<S, A, E>(
 where
     A: mdp::Action,
     S: mdp::State,
-    E: mdp::Enviorment<S, A>,
+    E: mdp::EnviormentModel<S, A>,
 {
     let mut policy: HashMap<S, A> = HashMap::new();
     for state in states {

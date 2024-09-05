@@ -23,12 +23,15 @@ Show your results graphically, as in Figure 4.3. Are your results stable as Î¸ â
 
 use std::collections::HashMap;
 
-use crate::bases::{
-    mdp::{Action, Agent, Enviorment, Policy, State},
-    policy_iteration::{greedy_policy, policy_iteration, value_iteration},
+use crate::{
+    bases::{
+        mdp::{Action, Agent, EnviormentModel, Policy, State},
+        policy_iteration::{greedy_policy, policy_iteration, value_iteration},
+    },
+    utils::stats::sample_from_hashmap_dist,
 };
 use plotters::prelude::*;
-use rand::{thread_rng, Rng};
+use rand::{distributions, thread_rng, Rng};
 
 use rand::seq::SliceRandom;
 #[derive(PartialEq, Eq, Clone, Hash, Debug)]
@@ -45,7 +48,7 @@ pub struct Casino {
     probability_of_win: f32, //ph
 }
 
-impl Enviorment<GamblerState, GamblerAction> for Casino {
+impl EnviormentModel<GamblerState, GamblerAction> for Casino {
     fn dynamics(
         &self,
         state: &GamblerState,
@@ -55,7 +58,7 @@ impl Enviorment<GamblerState, GamblerAction> for Casino {
         // since i loop over the dict to do the sum and multiply by prob and multiply by zero and
         // sum is like not doing anything theres no need to add the 0 prob to the hashmap
         for next_state in self.get_states() {
-            if state.is_terminal() {
+            if self.is_terminal(state) {
                 continue;
             }
             if next_state.capital == state.capital - action.stake {
@@ -92,13 +95,17 @@ impl Enviorment<GamblerState, GamblerAction> for Casino {
         }
         states
     }
-}
+    fn response(&self, state: &GamblerState, action: &GamblerAction) -> (GamblerState, i32) {
+        let map = self.dynamics(state, action);
+        sample_from_hashmap_dist(&map)
+    }
 
-impl State for GamblerState {
-    fn is_terminal(&self) -> bool {
-        self.capital == 0 || self.capital == 100
+    fn is_terminal(&self, state: &GamblerState) -> bool {
+        state.capital == 0 || state.capital == 100
     }
 }
+
+impl State for GamblerState {}
 impl Action for GamblerAction {}
 
 fn plot_graph(
@@ -213,7 +220,7 @@ pub fn solution() -> HashMap<GamblerState, f32> {
     };
     let mut values: HashMap<GamblerState, f32> = HashMap::new();
     for state in &states {
-        if state.is_terminal() {
+        if casino.is_terminal(state) {
             values.insert(state.clone(), 0.0);
         } else {
             values.insert(state.clone(), rng.gen());
